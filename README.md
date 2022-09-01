@@ -14,7 +14,7 @@
 
 ## 部署
 
-请安装matplotlab，并将Clash放置在src目录下（文件名`clash`）。  
+请安装matplotlab，并将Clash放置在`src`目录下（文件名`clash`）。  
 自动下载地区信息：
 
 ```
