@@ -12,7 +12,24 @@
 - [ ] 更多评估指标
 - [ ] 对接Telegram Bot
 
+## 部署
+
+请安装matplotlab，并将Clash放置在src目录下（文件名`clash`）。  
+自动下载地区信息：
+
+```
+python3 main.py <测试订阅链接>
+```
+手动指定地区信息：
+
+```
+python3 main.py -c <Country.mmdb文件位置> <测试订阅链接>
+```
+
+测试结果位于`result.png`。
+
 ## 注意事项
 
 - 只支持GNU Linux
 - matplotlib可能不能正确显示中文，需要手动配置字体文件
+
