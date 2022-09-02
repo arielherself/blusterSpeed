@@ -15,16 +15,22 @@ class nodeResult:
     def __init__(self, name: str, jsonStr: str, ipJsonStr: str, icmping: float, nfu: int):
         self.name = name
         self._json = json.loads(jsonStr)
-        self._ipJson = json.loads(ipJsonStr)
         self.icmping = icmping
         self.ping = self._json['ping']['latency']
         self.jitter = self._json['ping']['jitter']
         self.download = str(float(self._json['download']['bandwidth']) * 8 / 1000000.0)
         self.upload = str(float(self._json['upload']['bandwidth']) * 8 / 1000000.0)
-        self.isp = self._ipJson['org']
-        self.country = self._ipJson['country']
-        self.region = self._ipJson['region']
-        self.city = self._ipJson['city']
+        try:
+            self._ipJson = json.loads(ipJsonStr)
+            self.isp = self._ipJson['org']
+            self.country = self._ipJson['country']
+            self.region = self._ipJson['region']
+            self.city = self._ipJson['city']
+        except:
+            self.isp = ''
+            self.country = ''
+            self.region = ''
+            self.city = ''
         self.nfu = nfu
 
     def __str__(self):
