@@ -1,0 +1,9 @@
+PING 190.103.176.81 (190.103.176.81) 56(84) bytes of data.
+64 bytes from 190.103.176.81: icmp_seq=1 ttl=46 time=338 ms
+64 bytes from 190.103.176.81: icmp_seq=2 ttl=46 time=341 ms
+64 bytes from 190.103.176.81: icmp_seq=3 ttl=46 time=388 ms
+64 bytes from 190.103.176.81: icmp_seq=4 ttl=46 time=339 ms
+
+--- 190.103.176.81 ping statistics ---
+4 packets transmitted, 4 received, 0% packet loss, time 3004ms
+rtt min/avg/max/mdev = 338.249/351.641/388.371/21.234 ms

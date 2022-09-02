@@ -6,14 +6,19 @@ from os import system, environ
 from time import sleep
 
 class nodeResult:
-    def __init__(self, name: str, jsonStr: str):
+    def __init__(self, name: str, jsonStr: str, ipJsonStr: str, icmping: float):
         self.name = name
         self._json = json.loads(jsonStr)
+        self._ipJson = json.loads(ipJsonStr)
+        self.icmping = icmping
         self.ping = self._json['ping']['latency']
         self.jitter = self._json['ping']['jitter']
         self.download = self._json['download']['bytes']
         self.upload = self._json['upload']['bytes']
-        self.isp = self._json['isp']
+        self.isp = self._ipJson['org']
+        self.country = self._ipJson['country']
+        self.region = self._ipJson['region']
+        self.city = self._ipJson['city']
 
     def __str__(self):
         return f'ISP: {self.isp} Latency: {self.ping}\nDownload: {float(self.download)/1048576:.2f} Mbps, Upload: {float(self.upload)/1048576:.2f} Mbps'
@@ -71,7 +76,7 @@ def deploy(configURL: str, mmdbPath: str):
         # print(proxies)
     seq = []
     print(nodeResult.inlineHeaders())
-    for proxy in proxies[start:]:
+    for proxy in proxies[start:start+1]:
         # print(proxy)
         # print('----------')
         n = switch(proxy)
@@ -136,7 +141,14 @@ def speedtest(name: str) -> nodeResult:
     system('(speedtest --accept-gdpr -f json 1> result.json 2>err)')
     with open('result.json') as resultFile:
         try:
-            r = nodeResult(name, resultFile.readlines()[0].strip())
+            system('curl ipinfo.io > ipinfo')
+            system('curl ip.sb | xargs -I {} -d "\n" ping -c 4 {} > icmping')
+            sum = 0
+            with open('icmping') as fil:
+                for line in fil.readlines()[1:5]:
+                    sum += float(line[line.find('time=')+5:line.find(' ms')])
+            with open('ipinfo') as fil:
+                r = nodeResult(name, resultFile.readlines()[0].strip(), '\n'.join(fil.readlines()), float(sum)/4.0)
         except (IndexError, KeyError):
             r = name
     # system('rm result.json')
@@ -145,7 +157,7 @@ def speedtest(name: str) -> nodeResult:
 def plot(nodeList: list):
     mpl.rcParams["font.sans-serif"]=["SimHei"]
     mpl.rcParams["font.family"] = 'sans-serif'
-    lbs = ['节点名称', '延迟', '抖动', '下载速度', '上传速度', '提供商']
+    lbs = ['节点名称', 'ICMPing', 'Speedtest Ping', '抖动', '下载速度', '上传速度', '落地IP属地', '提供商']
     colours = []
     texts = []
     sym = 1
@@ -153,11 +165,11 @@ def plot(nodeList: list):
         sym = 1 - sym
         back = '#DDDDDD' if sym == 1 else '#FFFFFF'
         if isinstance(each, nodeResult):
-            colours.append([back, laColour(each.ping), laColour(each.jitter), colour(float(each.download)/1048576), colour(float(each.upload)/1048576), back])
-            texts.append([each.name, f'{each.ping} ms', f'{each.jitter} ms', f'{float(each.download)/1048576:.2f} Mbps', f'{float(each.upload)/1048576:.2f} Mbps', each.isp])
+            colours.append([back, laColour(each.icmping), laColour(each.ping), laColour(each.jitter), colour(float(each.download)/1048576), colour(float(each.upload)/1048576), back, back])
+            texts.append([each.name, f'{each.icmping} ms', f'{each.ping} ms', f'{each.jitter} ms', f'{float(each.download)/1048576:.2f} Mbps', f'{float(each.upload)/1048576:.2f} Mbps', f'{each.city}, {each.region}, {each.country}', each.isp])
         else:
-            colours.append([back, '#FF0000', '#FF0000', '#969696', '#969696', back])
-            texts.append([each, '--', '--', '--', '--', '--'])
+            colours.append([back, '#FF0000', '#FF0000', '#FF0000', '#969696', '#969696', back, back])
+            texts.append([each, '--', '--', '--', '--', '--', '--', '--'])
     plt.figure(dpi=300, figsize=(1, 1))
     mpl.pyplot.axis('off')
     plt.autoscale(enable=True, tight=True)
@@ -165,7 +177,7 @@ def plot(nodeList: list):
     tb.auto_set_font_size(False)
     tb.set_fontsize(12)
     tb.scale(1, 1.5)
-    tb._autoColumns = [0, 1, 2,3,4,5]
+    tb._autoColumns = [0, 1, 2, 3, 4, 5, 6, 7]
     plt.title('blusterSpeed [Dev]', loc='left')
     plt.savefig('result.png', bbox_inches='tight')
 
