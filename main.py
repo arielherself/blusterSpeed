@@ -19,8 +19,8 @@ class nodeResult:
         self.icmping = icmping
         self.ping = self._json['ping']['latency']
         self.jitter = self._json['ping']['jitter']
-        self.download = str(float(self._json['download']['bandwidth']) * 8 / 1048576.0)
-        self.upload = str(float(self._json['upload']['bandwidth']) * 8 / 1048576.0)
+        self.download = str(float(self._json['download']['bandwidth']) * 8 / 1000000.0)
+        self.upload = str(float(self._json['upload']['bandwidth']) * 8 / 1000000.0)
         self.isp = self._ipJson['org']
         self.country = self._ipJson['country']
         self.region = self._ipJson['region']
