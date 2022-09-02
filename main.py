@@ -85,7 +85,7 @@ def deploy(configURL: str, mmdbPath: str):
         # print(proxies)
     seq = []
     print(nodeResult.inlineHeaders())
-    for proxy in proxies[start+3:start+4]:
+    for proxy in proxies[start:]:
         # print(proxy)
         # print('----------')
         n = switch(proxy)
