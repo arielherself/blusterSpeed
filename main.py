@@ -19,18 +19,18 @@ class nodeResult:
         self.icmping = icmping
         self.ping = self._json['ping']['latency']
         self.jitter = self._json['ping']['jitter']
-        self.download = self._json['download']['bytes']
-        self.upload = self._json['upload']['bytes']
+        self.download = str(float(self._json['download']['bandwidth']) * 8 / 1048576.0)
+        self.upload = str(float(self._json['upload']['bandwidth']) * 8 / 1048576.0)
         self.isp = self._ipJson['org']
         self.country = self._ipJson['country']
         self.region = self._ipJson['region']
         self.city = self._ipJson['city']
 
     def __str__(self):
-        return f'ISP: {self.isp} Latency: {self.ping}\nDownload: {float(self.download)/1048576:.2f} Mbps, Upload: {float(self.upload)/1048576:.2f} Mbps'
+        return f'ISP: {self.isp} Latency: {self.ping}\nDownload: {float(self.download):.2f} Mbps, Upload: {float(self.upload):.2f} Mbps'
 
     def inlineStr(self) -> str:
-        return '\t\t\t\t'.join([self.isp, str(self.ping), f'{float(self.download)/1048576:.2f} Mbps', f'{float(self.upload)/1048576:.2f} Mbps'])
+        return '\t\t\t\t'.join([self.isp, str(self.ping), f'{float(self.download):.2f} Mbps', f'{float(self.upload):.2f} Mbps'])
 
     @staticmethod
     def inlineHeaders() -> str:
@@ -177,8 +177,8 @@ def plot(nodeList: list):
         sym = 1 - sym
         back = '#DDDDDD' if sym == 1 else '#FFFFFF'
         if isinstance(each, nodeResult):
-            colours.append([back, laColour(each.icmping) if each.icmping != 0.0 else '#FF0000', laColour(each.ping), laColour(each.jitter), colour(float(each.download)/1048576), colour(float(each.upload)/1048576), back, back])
-            texts.append([each.name, f'{each.icmping:.2f} ms' if each.icmping != 0.0 else '--', f'{each.ping} ms', f'{each.jitter} ms', f'{float(each.download)/1048576:.2f} Mbps', f'{float(each.upload)/1048576:.2f} Mbps', f'{each.city}, {each.region}, {each.country}', each.isp])
+            colours.append([back, laColour(each.icmping) if each.icmping != 0.0 else '#FF0000', laColour(each.ping), laColour(each.jitter), colour(float(each.download)), colour(float(each.upload)), back, back])
+            texts.append([each.name, f'{each.icmping:.2f} ms' if each.icmping != 0.0 else '--', f'{each.ping} ms', f'{each.jitter} ms', f'{float(each.download):.2f} Mbps', f'{float(each.upload):.2f} Mbps', f'{each.city}, {each.region}, {each.country}', each.isp])
         else:
             colours.append([back, '#FF0000', '#FF0000', '#FF0000', '#969696', '#969696', back, back])
             texts.append([each, '--', '--', '--', '--', '--', '--', '--'])
