@@ -13,3 +13,6 @@ src/config.raw.yaml
 src/config.yaml
 src/Country.mmdb
 src/cache.db
+ping
+ipinfo
+icmping
