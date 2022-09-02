@@ -157,12 +157,12 @@ def speedtest(name: str) -> nodeResult:
     with open('result.json') as resultFile:
         try:
             system('curl ipinfo.io > ipinfo')
-            system('curl ip.sb | xargs -I {} -d "\n" ping -c 4 {} > icmping')
+            system('curl ip.sb --connectbu-timeout 10 | xargs -I {} -d "\n" ping -c 4 {} > icmping')
             sum = 0
             with open('icmping') as fil:
                 for line in fil.readlines()[1:5]:
                     sum += float(line[line.find('time=')+5:line.find(' ms')])
-        except ValueError:
+        except:
             sum = 0.0
         try:
             system('curl -L -w %{http_code} -o /dev/null https://www.netflix.com/sg-zh/title/70143836 > nfu')
