@@ -157,7 +157,7 @@ def speedtest(name: str) -> nodeResult:
     with open('result.json') as resultFile:
         try:
             system('curl ipinfo.io > ipinfo')
-            system('curl ip.sb --connectbu-timeout 10 | xargs -I {} -d "\n" ping -c 4 {} > icmping')
+            system('curl ip.sb --connect-timeout 10 | xargs -I {} -d "\n" ping -c 4 {} > icmping')
             sum = 0
             with open('icmping') as fil:
                 for line in fil.readlines()[1:5]:
@@ -165,13 +165,12 @@ def speedtest(name: str) -> nodeResult:
         except:
             sum = 0.0
         try:
-            system('curl -L -w %{http_code} -o /dev/null https://www.netflix.com/sg-zh/title/70143836 > nfu')
-        except:
-            nfu = 0
-        else:
+            system('curl -L --connect-timeout 10 -w %{http_code} -o /dev/null https://www.netflix.com/sg-zh/title/70143836 > nfu')
             with open('nfu') as fil:
                 code = fil.readlines()[0].strip()
                 nfu = 2 if code in ('200', '302') else (1 if code == '404' else 0)
+        except:
+            nfu = 0
         try:
             with open('ipinfo') as fil:
                 r = nodeResult(name, resultFile.readlines()[0].strip(), '\n'.join(fil.readlines()), float(sum)/4.0, nfu)
