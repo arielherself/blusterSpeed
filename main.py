@@ -12,7 +12,7 @@ def setColumnAlign(table:plt.table, column: int, align: str):
         table._cells[cell].PAD = 0.01
 
 class nodeResult:
-    def __init__(self, name: str, jsonStr: str, ipJsonStr: str, icmping: float):
+    def __init__(self, name: str, jsonStr: str, ipJsonStr: str, icmping: float, nfu: int):
         self.name = name
         self._json = json.loads(jsonStr)
         self._ipJson = json.loads(ipJsonStr)
@@ -25,6 +25,7 @@ class nodeResult:
         self.country = self._ipJson['country']
         self.region = self._ipJson['region']
         self.city = self._ipJson['city']
+        self.nfu = nfu
 
     def __str__(self):
         return f'ISP: {self.isp} Latency: {self.ping}\nDownload: {float(self.download):.2f} Mbps, Upload: {float(self.upload):.2f} Mbps'
@@ -84,7 +85,7 @@ def deploy(configURL: str, mmdbPath: str):
         # print(proxies)
     seq = []
     print(nodeResult.inlineHeaders())
-    for proxy in proxies[start:]:
+    for proxy in proxies[start+3:start+4]:
         # print(proxy)
         # print('----------')
         n = switch(proxy)
@@ -158,8 +159,16 @@ def speedtest(name: str) -> nodeResult:
         except ValueError:
             sum = 0.0
         try:
+            system('curl -L -w %{http_code} -o /dev/null https://www.netflix.com/sg-zh/title/70143836 > nfu')
+        except:
+            nfu = 0
+        else:
+            with open('nfu') as fil:
+                code = fil.readlines()[0].strip()
+                nfu = 2 if code in ('200', '302') else (1 if code == '404' else 0)
+        try:
             with open('ipinfo') as fil:
-                r = nodeResult(name, resultFile.readlines()[0].strip(), '\n'.join(fil.readlines()), float(sum)/4.0)
+                r = nodeResult(name, resultFile.readlines()[0].strip(), '\n'.join(fil.readlines()), float(sum)/4.0, nfu)
         except (IndexError, KeyError):
             r = name
             return r
@@ -169,7 +178,7 @@ def speedtest(name: str) -> nodeResult:
 def plot(nodeList: list):
     mpl.rcParams["font.sans-serif"]=["SimHei"]
     mpl.rcParams["font.family"] = 'sans-serif'
-    lbs = ['节点名称', 'ICMPing', 'Speedtest Ping', '抖动', '下载速度', '上传速度', '落地IP属地', '提供商']
+    lbs = ['节点名称', 'ICMPing', 'Speedtest Ping', '抖动', '下载速度', '上传速度', 'Netflix', '落地IP属地', '提供商']
     colours = []
     texts = []
     sym = 1
@@ -177,11 +186,11 @@ def plot(nodeList: list):
         sym = 1 - sym
         back = '#DDDDDD' if sym == 1 else '#FFFFFF'
         if isinstance(each, nodeResult):
-            colours.append([back, laColour(each.icmping) if each.icmping != 0.0 else '#FF0000', laColour(each.ping), laColour(each.jitter), colour(float(each.download)), colour(float(each.upload)), back, back])
-            texts.append([each.name, f'{each.icmping:.2f} ms' if each.icmping != 0.0 else '--', f'{each.ping} ms', f'{each.jitter} ms', f'{float(each.download):.2f} Mbps', f'{float(each.upload):.2f} Mbps', f'{each.city}, {each.region}, {each.country}', each.isp])
+            colours.append([back, laColour(each.icmping) if each.icmping != 0.0 else '#FF0000', laColour(each.ping), laColour(each.jitter), colour(float(each.download)), colour(float(each.upload)), '#BF2F0B' if each.nfu == 2 else ('#FFFFFF' if each.nfu == 1 else '#BF2F0B'), back, back])
+            texts.append([each.name, f'{each.icmping:.2f} ms' if each.icmping != 0.0 else '--', f'{each.ping} ms', f'{each.jitter} ms', f'{float(each.download):.2f} Mbps', f'{float(each.upload):.2f} Mbps', '解锁' if each.nfu == 2 else ('自制' if each.nfu == 1 else '失败'), f'{each.city}, {each.region}, {each.country}', each.isp])
         else:
-            colours.append([back, '#FF0000', '#FF0000', '#FF0000', '#969696', '#969696', back, back])
-            texts.append([each, '--', '--', '--', '--', '--', '--', '--'])
+            colours.append([back, '#FF0000', '#FF0000', '#FF0000', '#969696', '#969696', '#969696', back, back])
+            texts.append([each, '--', '--', '--', '--', '--', '--', '--', '--'])
     plt.figure(dpi=300, figsize=(1, 1))
     mpl.pyplot.axis('off')
     plt.autoscale(enable=True, tight=True)
@@ -189,8 +198,8 @@ def plot(nodeList: list):
     tb.auto_set_font_size(False)
     tb.set_fontsize(12)
     tb.scale(1, 1.5)
-    tb._autoColumns = [0, 1, 2, 3, 4, 5, 6, 7]
-    for i in (0, 6, 7):
+    tb._autoColumns = [0, 1, 2, 3, 4, 5, 6, 7, 8]
+    for i in (0, 7, 8):
         setColumnAlign(tb, i, 'left')
     plt.title('blusterSpeed [Dev]', loc='left')
     plt.savefig('result.png', bbox_inches='tight')
