@@ -156,7 +156,7 @@ def speedtest(name: str) -> nodeResult:
     system('(speedtest --accept-gdpr -f json 1> result.json 2>err)')
     with open('result.json') as resultFile:
         try:
-            system('curl ipinfo.io > ipinfo')
+            system('curl ipinfo.io --connect-timeout 10 > ipinfo')
             system('curl ip.sb --connect-timeout 10 | xargs -I {} -d "\n" ping -c 4 {} > icmping')
             sum = 0
             with open('icmping') as fil:
