@@ -147,10 +147,14 @@ def speedtest(name: str) -> nodeResult:
             with open('icmping') as fil:
                 for line in fil.readlines()[1:5]:
                     sum += float(line[line.find('time=')+5:line.find(' ms')])
+        except ValueError:
+            sum = 0.0
+        try:
             with open('ipinfo') as fil:
                 r = nodeResult(name, resultFile.readlines()[0].strip(), '\n'.join(fil.readlines()), float(sum)/4.0)
         except (IndexError, KeyError):
             r = name
+            return r
     # system('rm result.json')
     return r
 
@@ -165,8 +169,8 @@ def plot(nodeList: list):
         sym = 1 - sym
         back = '#DDDDDD' if sym == 1 else '#FFFFFF'
         if isinstance(each, nodeResult):
-            colours.append([back, laColour(each.icmping), laColour(each.ping), laColour(each.jitter), colour(float(each.download)/1048576), colour(float(each.upload)/1048576), back, back])
-            texts.append([each.name, f'{each.icmping} ms', f'{each.ping} ms', f'{each.jitter} ms', f'{float(each.download)/1048576:.2f} Mbps', f'{float(each.upload)/1048576:.2f} Mbps', f'{each.city}, {each.region}, {each.country}', each.isp])
+            colours.append([back, laColour(each.icmping) if each.icmping != 0.0 else '#FF0000', laColour(each.ping), laColour(each.jitter), colour(float(each.download)/1048576), colour(float(each.upload)/1048576), back, back])
+            texts.append([each.name, f'{each.icmping} ms' if each.icmping != 0.0 else '--', f'{each.ping} ms', f'{each.jitter} ms', f'{float(each.download)/1048576:.2f} Mbps', f'{float(each.upload)/1048576:.2f} Mbps', f'{each.city}, {each.region}, {each.country}', each.isp])
         else:
             colours.append([back, '#FF0000', '#FF0000', '#FF0000', '#969696', '#969696', back, back])
             texts.append([each, '--', '--', '--', '--', '--', '--', '--'])
