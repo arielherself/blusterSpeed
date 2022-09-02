@@ -5,6 +5,12 @@ import matplotlib as mpl
 from os import system, environ
 from time import sleep
 
+def setColumnAlign(table:plt.table, column: int, align: str):
+    cells = [key for key in table._cells if (key[1] == column and key[0] != 0)]
+    for cell in cells:
+        table._cells[cell].set_text_props(ha=align)
+        table._cells[cell].PAD = 0.01
+
 class nodeResult:
     def __init__(self, name: str, jsonStr: str, ipJsonStr: str, icmping: float):
         self.name = name
@@ -32,32 +38,34 @@ class nodeResult:
 
 def colour(speed: str('Mbps')):
     if speed > 500:
-        return '#FF3300'
-    elif speed > 250:
-        return '#FF3366'
-    elif speed > 200:
-        return '#FF33CC'
-    elif speed > 150:
-        return '#CC33FF'
-    elif speed > 100:
-        return '#CC66FF'
-    elif speed > 50:
-        return '#66FFFF'
-    elif speed > 0:
-        return '#FFFF00'
+        return '#204CE8'
     else:
-        return '#969696'
+        return f'#20{hex(int(181-(speed/500.0)*(181-85)))[2:].zfill(2).upper()}E8'
 
 def laColour(latency):
     la = float(latency)
-    if la > 500:
-        return '#FF0066'
+    if la > 700:
+        return '#802621'
+    elif la > 600:
+        return '#BF3932'
+    elif la > 500:
+        return '#E6443C'
+    elif la > 400:
+        return '#FF4C43'
+    elif la > 300:
+        return '#71801D'
+    elif la > 250:
+        return '#A9BF2C'
     elif la > 200:
-        return '#3366FF'
+        return '#CBE635'
+    elif la > 150:
+        return '#1C8026'
     elif la > 100:
-        return '#FFFF99'
+        return '#2ABF39'
+    elif la > 50:
+        return '#32E644'
     else:
-        return '#00FF00'
+        return '#38FE4D'
 
 def deploy(configURL: str, mmdbPath: str):
     if system('ls src && find src/clash') != 0:
@@ -170,7 +178,7 @@ def plot(nodeList: list):
         back = '#DDDDDD' if sym == 1 else '#FFFFFF'
         if isinstance(each, nodeResult):
             colours.append([back, laColour(each.icmping) if each.icmping != 0.0 else '#FF0000', laColour(each.ping), laColour(each.jitter), colour(float(each.download)/1048576), colour(float(each.upload)/1048576), back, back])
-            texts.append([each.name, f'{each.icmping} ms' if each.icmping != 0.0 else '--', f'{each.ping} ms', f'{each.jitter} ms', f'{float(each.download)/1048576:.2f} Mbps', f'{float(each.upload)/1048576:.2f} Mbps', f'{each.city}, {each.region}, {each.country}', each.isp])
+            texts.append([each.name, f'{each.icmping:.2f} ms' if each.icmping != 0.0 else '--', f'{each.ping} ms', f'{each.jitter} ms', f'{float(each.download)/1048576:.2f} Mbps', f'{float(each.upload)/1048576:.2f} Mbps', f'{each.city}, {each.region}, {each.country}', each.isp])
         else:
             colours.append([back, '#FF0000', '#FF0000', '#FF0000', '#969696', '#969696', back, back])
             texts.append([each, '--', '--', '--', '--', '--', '--', '--'])
@@ -182,6 +190,8 @@ def plot(nodeList: list):
     tb.set_fontsize(12)
     tb.scale(1, 1.5)
     tb._autoColumns = [0, 1, 2, 3, 4, 5, 6, 7]
+    for i in (0, 6, 7):
+        setColumnAlign(tb, i, 'left')
     plt.title('blusterSpeed [Dev]', loc='left')
     plt.savefig('result.png', bbox_inches='tight')
 
