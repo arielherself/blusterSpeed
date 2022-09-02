@@ -5,6 +5,12 @@ import matplotlib as mpl
 from os import system, environ
 from time import sleep
 
+def isip(tar: str) -> bool:
+    for each in tar.split('.'):
+        if not each.isdigit():
+            return False
+    return True
+
 def setColumnAlign(table:plt.table, column: int, align: str):
     cells = [key for key in table._cells if (key[1] == column and key[0] != 0)]
     for cell in cells:
@@ -12,7 +18,7 @@ def setColumnAlign(table:plt.table, column: int, align: str):
         table._cells[cell].PAD = 0.01
 
 class nodeResult:
-    def __init__(self, name: str, jsonStr: str, ipJsonStr: str, icmping: float, nfu: int):
+    def __init__(self, name: str, jsonStr: str, ipJsonStr: str, icmping: float, nfu: int, hipisp: str):
         self.name = name
         self._json = json.loads(jsonStr)
         self.icmping = icmping
@@ -26,11 +32,13 @@ class nodeResult:
             self.country = self._ipJson['country']
             self.region = self._ipJson['region']
             self.city = self._ipJson['city']
+            self.hipisp = hipisp
         except:
             self.isp = 'Unknown'
             self.country = 'Unknown'
             self.region = 'Unknown'
             self.city = 'Unknown'
+            self.hipisp = 'Unknown'
         self.nfu = nfu
 
     def __str__(self):
@@ -94,8 +102,8 @@ def deploy(configURL: str, mmdbPath: str):
     for proxy in proxies[start:]:
         # print(proxy)
         # print('----------')
-        n = switch(proxy)
-        tmp = speedtest(n)
+        n, s = switch(proxy)
+        tmp = speedtest(n, s)
         if tmp:
             try:
                 print(tmp.inlineStr())
@@ -107,11 +115,15 @@ def deploy(configURL: str, mmdbPath: str):
             
     return seq
 
-def switch(nodeBlob: str) -> str:
+def switch(nodeBlob: str):
     if '{' in nodeBlob:
         name = nodeBlob[nodeBlob.find('name: ')+6:nodeBlob[nodeBlob.find('name: '):].find(',')+nodeBlob.find('name: ')]
     else:
         name = nodeBlob[nodeBlob.find('name: ')+6:nodeBlob[nodeBlob.find('name: '):].find('\n')+nodeBlob.find('name: ')]
+    if '{' in nodeBlob:
+        server = nodeBlob[nodeBlob.find('server: ')+8:nodeBlob[nodeBlob.find('server: '):].find(',')+nodeBlob.find('server: ')]
+    else:
+        server = nodeBlob[nodeBlob.find('server: ')+8:nodeBlob[nodeBlob.find('server: '):].find('\n')+nodeBlob.find('server: ')]
     if name.startswith("'") or name.startswith('"'):
         name = name[1:-1]
     profile = f'''
@@ -147,17 +159,33 @@ rules:
 
     with open('src/config.yaml', 'w') as config:
         print(profile, file=config)
-    return name
+    return name, server
 
-def speedtest(name: str) -> nodeResult:
+def speedtest(name: str, server: str) -> nodeResult:
     environ['ALL_PROXY'] = 'http://127.0.0.1:7890'
     system('((kill -9 $(pidof clash)) 2>err);(nohup src/clash -d src 1>clash_logs 2>&1 &)')
     sleep(3)
     system('(speedtest --accept-gdpr -f json 1> result.json 2>err)')
+    # system('echo hello 1> result.json 2>err')
     with open('result.json') as resultFile:
         try:
-            system('curl ipinfo.io --connect-timeout 10 > ipinfo')
-            system('curl ip.sb --connect-timeout 10 | xargs -I {} -d "\n" ping -c 4 {} > icmping')
+            system('curl --connect-timeout 10 ipinfo.io > ipinfo')
+            # print('hello')
+            system(f'dig {server} +short > homeip')
+            with open('homeip') as fil:
+                candidates = [each.strip() for each in fil.readlines()]
+                ip = 'stop.is'
+                for each in candidates:
+                    if isip(each):
+                        ip = each
+                system(f'curl --connect-timeout 10 ipinfo.io/{ip} > hipinfo')
+            with open('hipinfo') as fil:
+                hipinfo = json.loads('\n'.join(fil.readlines()))
+            hipisp = hipinfo['org']
+        except:
+            hipisp = '--'
+        try:
+            system('curl --connect-timeout 10 ip.sb | xargs -I {} -d "\n" ping -c 4 {} > icmping')
             sum = 0
             with open('icmping') as fil:
                 for line in fil.readlines()[1:5]:
@@ -169,11 +197,17 @@ def speedtest(name: str) -> nodeResult:
             with open('nfu') as fil:
                 code = fil.readlines()[0].strip()
                 nfu = 2 if code in ('200', '302') else (1 if code == '404' else 0)
+            if code == '404':
+                system('curl -L --connect-timeout 10 -w %{http_code} -o /dev/null https://www.netflix.com/title/70153373 > nfu')
+                with open('nfu') as fil:
+                    code = fil.readlines()[0].strip()
+                    if code in ('200', '302'):
+                        nfu = 2
         except:
             nfu = 0
         try:
             with open('ipinfo') as fil:
-                r = nodeResult(name, resultFile.readlines()[0].strip(), '\n'.join(fil.readlines()), float(sum)/4.0, nfu)
+                r = nodeResult(name, resultFile.readlines()[0].strip(), '\n'.join(fil.readlines()), float(sum)/4.0, nfu, hipisp)
         except (IndexError, KeyError):
             r = name
             return r
@@ -183,7 +217,7 @@ def speedtest(name: str) -> nodeResult:
 def plot(nodeList: list):
     mpl.rcParams["font.sans-serif"]=["SimHei"]
     mpl.rcParams["font.family"] = 'sans-serif'
-    lbs = ['节点名称', 'ICMPing', 'Speedtest Ping', '抖动', '下载速度', '上传速度', 'Netflix', '落地IP属地', '提供商']
+    lbs = ['节点名称', 'ICMPing', 'Speedtest Ping', '抖动', '下载速度', '上传速度', 'Netflix', '落地IP属地', '落地提供商', '入口提供商']
     colours = []
     texts = []
     sym = 1
@@ -191,11 +225,11 @@ def plot(nodeList: list):
         sym = 1 - sym
         back = '#DDDDDD' if sym == 1 else '#FFFFFF'
         if isinstance(each, nodeResult):
-            colours.append([back, laColour(each.icmping) if each.icmping != 0.0 else '#FF0000', laColour(each.ping), laColour(each.jitter), colour(float(each.download)), colour(float(each.upload)), '#00FF59' if each.nfu == 2 else ('#FFFFFF' if each.nfu == 1 else '#BF2F0B'), back, back])
-            texts.append([each.name, f'{each.icmping:.2f} ms' if each.icmping != 0.0 else '--', f'{each.ping} ms', f'{each.jitter} ms', f'{float(each.download):.2f} Mbps', f'{float(each.upload):.2f} Mbps', '解锁' if each.nfu == 2 else ('自制' if each.nfu == 1 else '失败'), f'{each.city}, {each.region}, {each.country}', each.isp])
+            colours.append([back, laColour(each.icmping) if each.icmping != 0.0 else '#FF0000', laColour(each.ping), laColour(each.jitter), colour(float(each.download)), colour(float(each.upload)), '#00FF59' if each.nfu == 2 else ('#FFFFFF' if each.nfu == 1 else '#BF2F0B'), back, back, back])
+            texts.append([each.name, f'{each.icmping:.2f} ms' if each.icmping != 0.0 else '--', f'{each.ping} ms', f'{each.jitter} ms', f'{float(each.download):.2f} Mbps', f'{float(each.upload):.2f} Mbps', '解锁' if each.nfu == 2 else ('自制' if each.nfu == 1 else '失败'), f'{each.city}, {each.region}, {each.country}', each.isp, each.hipisp])
         else:
-            colours.append([back, '#FF0000', '#FF0000', '#FF0000', '#969696', '#969696', '#969696', back, back])
-            texts.append([each, '--', '--', '--', '--', '--', '--', '--', '--'])
+            colours.append([back, '#FF0000', '#FF0000', '#FF0000', '#969696', '#969696', '#969696', back, back, back])
+            texts.append([each, '--', '--', '--', '--', '--', '--', '--', '--', '--'])
     plt.figure(dpi=300, figsize=(1, 1))
     mpl.pyplot.axis('off')
     plt.autoscale(enable=True, tight=True)
@@ -203,8 +237,8 @@ def plot(nodeList: list):
     tb.auto_set_font_size(False)
     tb.set_fontsize(12)
     tb.scale(1, 1.5)
-    tb._autoColumns = [0, 1, 2, 3, 4, 5, 6, 7, 8]
-    for i in (0, 7, 8):
+    tb._autoColumns = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    for i in (0, 7, 8, 9):
         setColumnAlign(tb, i, 'left')
     plt.title('blusterSpeed [Dev]', loc='left')
     plt.savefig('result.png', bbox_inches='tight')
