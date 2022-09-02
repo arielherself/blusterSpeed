@@ -169,7 +169,7 @@ def speedtest(name: str, server: str) -> nodeResult:
     # system('echo hello 1> result.json 2>err')
     with open('result.json') as resultFile:
         try:
-            system('curl --connect-timeout 10 ipinfo.io > ipinfo')
+            system('curl -m 10 --connect-timeout 10 ipinfo.io > ipinfo')
             # print('hello')
             system(f'dig {server} +short > homeip')
             with open('homeip') as fil:
@@ -178,14 +178,14 @@ def speedtest(name: str, server: str) -> nodeResult:
                 for each in candidates:
                     if isip(each):
                         ip = each
-                system(f'curl --connect-timeout 10 ipinfo.io/{ip} > hipinfo')
+                system(f'curl -m 10 --connect-timeout 10 ipinfo.io/{ip} > hipinfo')
             with open('hipinfo') as fil:
                 hipinfo = json.loads('\n'.join(fil.readlines()))
             hipisp = hipinfo['org']
         except:
             hipisp = '--'
         try:
-            system('curl --connect-timeout 10 ip.sb | xargs -I {} -d "\n" ping -c 4 {} > icmping')
+            system('curl -m 10 --connect-timeout 10 ip.sb | xargs -I {} -d "\n" ping -c 4 {} > icmping')
             sum = 0
             with open('icmping') as fil:
                 for line in fil.readlines()[1:5]:
@@ -193,12 +193,12 @@ def speedtest(name: str, server: str) -> nodeResult:
         except:
             sum = 0.0
         try:
-            system('curl -L --connect-timeout 10 -w %{http_code} -o /dev/null https://www.netflix.com/sg-zh/title/70143836 > nfu')
+            system('curl -L -m 10 --connect-timeout 10 -w %{http_code} -o /dev/null https://www.netflix.com/sg-zh/title/70143836 > nfu')
             with open('nfu') as fil:
                 code = fil.readlines()[0].strip()
                 nfu = 2 if code in ('200', '302') else (1 if code == '404' else 0)
             if code == '404':
-                system('curl -L --connect-timeout 10 -w %{http_code} -o /dev/null https://www.netflix.com/title/70153373 > nfu')
+                system('curl -L -m 10 --connect-timeout 10 -w %{http_code} -o /dev/null https://www.netflix.com/title/70153373 > nfu')
                 with open('nfu') as fil:
                     code = fil.readlines()[0].strip()
                     if code in ('200', '302'):
