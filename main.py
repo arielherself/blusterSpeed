@@ -27,10 +27,10 @@ class nodeResult:
             self.region = self._ipJson['region']
             self.city = self._ipJson['city']
         except:
-            self.isp = ''
-            self.country = ''
-            self.region = ''
-            self.city = ''
+            self.isp = 'Unknown'
+            self.country = 'Unknown'
+            self.region = 'Unknown'
+            self.city = 'Unknown'
         self.nfu = nfu
 
     def __str__(self):
