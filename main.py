@@ -232,7 +232,7 @@ def plot(nodeList: list):
         sym = 1 - sym
         back = '#DDDDDD' if sym == 1 else '#FFFFFF'
         if isinstance(each, nodeResult):
-            colours.append([back, laColour(each.icmping) if each.icmping != 0.0 else '#FF0000', laColour(each.ping), laColour(each.jitter), colour(float(each.avgSpeed)), colour(float(each.upload)), s2colour(each.s2), '#00FF59' if each.nfu == 2 else ('#FFFFFF' if each.nfu == 1 else '#BF2F0B'), back, back, back])
+            colours.append([back, laColour(each.icmping) if each.icmping != 0.0 else '#969696', laColour(each.ping), laColour(each.jitter), colour(float(each.avgSpeed)), colour(float(each.upload)), s2colour(each.s2), '#00FF59' if each.nfu == 2 else ('#FFFFFF' if each.nfu == 1 else '#BF2F0B'), back, back, back])
             texts.append([each.name, f'{each.icmping:.2f} ms' if each.icmping != 0.0 else '--', f'{each.ping} ms', f'{each.jitter} ms', f'{float(each.avgSpeed):.2f} Mbps', f'{float(each.upload):.2f} Mbps', f'{each.s2:.2f} Mbps^2', '解锁' if each.nfu == 2 else ('自制' if each.nfu == 1 else '失败'), f'{each.city}, {each.region}, {each.country}', each.isp, each.hipisp])
         else:
             colours.append([back, '#FF0000', '#FF0000', '#FF0000', '#969696', '#969696', '#969696', '#969696', back, back, back])
